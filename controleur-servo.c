@@ -21,10 +21,6 @@
 #pragma config WDTEN = OFF     // Watchdog inactif.
 #pragma config LVP = OFF       // Single Supply Enable bits off.
 
-// Limites pour la position du servomoteur
-#define SERVO_MAX 125
-#define SERVO_MIN -125
-
 /**
  * Les 2 bits moins signifiants du rapport cyclique.
  * Sont copiés dans CCP5CON.DC5B
@@ -76,11 +72,11 @@ void PWM_configure(signed char position) {
     // Sépare le rapport cyclique en 2 + 6 bits:
     PWM_ccpr2LSB = pwm & 0x03;
     PWM_ccpr8MSB = pwm >> 2;
-
-    // Configure le générateur PWM:
-    CCPR5L = PWM_ccpr8MSB;
-    CCP5CONbits.DC5B = PWM_ccpr2LSB;
 }
+
+/** Limites pour la position du servomoteur. */
+#define SERVO_MAX 125
+#define SERVO_MIN -125
 
 /**
  * Position du servomoteur.
@@ -97,13 +93,14 @@ void SERVO_place(signed char position) {
     PWM_configure(position);
 }
 
-
 /**
  * Déplace le servomoteur.
  * @param deplacement Nombre d'unités que le servomoteur doit
  * se déplacer.
+ * @return La position du servomoteur.
  */
-void SERVO_deplace(signed char deplacement) {
+signed char SERVO_deplace(signed char deplacement) {
+
     // Déplace le servomoteur:
    SERVO_position += deplacement;
 
@@ -117,15 +114,16 @@ void SERVO_deplace(signed char deplacement) {
 
    // Configure le PWM:
    PWM_configure((signed char) SERVO_position);
+
+   // Indique la position du servomoteur.
+   return SERVO_position;
 }
 
 /**
  * Routine de gestion des interruptions de haute priorité.
  */
 void interrupt interruptionsHP() {
-    // Détecte de quel type d'interruption il s'agit:
-    if (PIR1bits.TMR2IF)
-    {
+    if (PIR1bits.TMR2IF) {
         PIR1bits.TMR2IF = 0;
         PWM_gereSequence();
     }
@@ -135,7 +133,6 @@ void interrupt interruptionsHP() {
  * Routine de gestion des interruptions de basse priorité.
  */
 void interrupt low_priority interruptionsBP() {
-    // Détecte de quel type d'interruption il s'agit:
     if (INTCON3bits.INT2IF) {
         INTCON3bits.INT2IF=0;
         SERVO_deplace(-10);
@@ -166,9 +163,9 @@ void initialiseHardware() {
     CCP5CONbits.CCP5M = 0xF;    // Active le CCP5.
     TRISAbits.RA4 = 0;          // Active la sortie du CCP5.
 
-    // Prépare les interruptions de haute priorité tmr2:
+    // Prépare les interruptions de basse priorité tmr2:
     PIE1bits.TMR2IE = 1;        // Active les interruptions.
-    IPR1bits.TMR2IP = 1;        // En haute priorité.
+    IPR1bits.TMR2IP = 0;        // En basse priorité.
     PIR1bits.TMR2IF = 0;        // Baisse le drapeau.
 
     // Prépare les interruptions de basse priorité INT1 et INT2:
@@ -187,7 +184,7 @@ void initialiseHardware() {
     INTCON3bits.INT1IE = 1;  // Active les interruptions pour INT1...
     INTCON3bits.INT1IP = 0;  // ... en basse priorité.
 
-    // Active les interruptions de haute et de basse priorité:
+    // Active les interruptions de basse priorité:
     RCONbits.IPEN = 1;
     INTCONbits.GIEH = 1;
     INTCONbits.GIEL = 1;    
