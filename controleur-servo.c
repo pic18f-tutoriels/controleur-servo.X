@@ -123,16 +123,6 @@ signed char SERVO_deplace(signed char deplacement) {
  * Routine de gestion des interruptions de haute priorité.
  */
 void interrupt interruptionsHP() {
-    if (PIR1bits.TMR2IF) {
-        PIR1bits.TMR2IF = 0;
-        PWM_gereSequence();
-    }
-}
-
-/**
- * Routine de gestion des interruptions de basse priorité.
- */
-void interrupt low_priority interruptionsBP() {
     if (INTCON3bits.INT2IF) {
         INTCON3bits.INT2IF=0;
         SERVO_deplace(-10);
@@ -140,6 +130,10 @@ void interrupt low_priority interruptionsBP() {
     if (INTCON3bits.INT1IF) {
         INTCON3bits.INT1IF = 0;
         SERVO_deplace(+10);
+    }
+    if (PIR1bits.TMR2IF) {
+        PIR1bits.TMR2IF = 0;
+        PWM_gereSequence();
     }
 }
 
@@ -165,7 +159,7 @@ void initialiseHardware() {
 
     // Prépare les interruptions de basse priorité tmr2:
     PIE1bits.TMR2IE = 1;        // Active les interruptions.
-    IPR1bits.TMR2IP = 0;        // En basse priorité.
+    IPR1bits.TMR2IP = 1;        // En haute priorité.
     PIR1bits.TMR2IF = 0;        // Baisse le drapeau.
 
     // Prépare les interruptions de basse priorité INT1 et INT2:
@@ -180,14 +174,14 @@ void initialiseHardware() {
     INTCON2bits.INTEDG1 = 0; // Interruptions de INT1 sur flanc descendant.
 
     INTCON3bits.INT2IE = 1;  // Active les interruptions pour INT2...
-    INTCON3bits.INT2IP = 0;  // ... en basse priorité.
+    INTCON3bits.INT2IP = 1;  // ... en haute priorité.
     INTCON3bits.INT1IE = 1;  // Active les interruptions pour INT1...
-    INTCON3bits.INT1IP = 0;  // ... en basse priorité.
+    INTCON3bits.INT1IP = 1;  // ... en haute priorité.
 
-    // Active les interruptions de basse priorité:
+    // Active les interruptions de haute priorité:
     RCONbits.IPEN = 1;
     INTCONbits.GIEH = 1;
-    INTCONbits.GIEL = 1;    
+    INTCONbits.GIEL = 0;
 }
 
 /**
