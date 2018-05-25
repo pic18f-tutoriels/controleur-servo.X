@@ -143,7 +143,7 @@ void interrupt interruptionsHP() {
  * 2ms de période. Configure également les interruptions
  * INT1 et INT2 en basse priorité.
  */
-void initialiseHardware() {
+void PERIPHERIQUES_initialise() {
     ANSELA = 0x00;      // Désactive les convertisseurs A/D.
     ANSELB = 0x00;      // Désactive les convertisseurs A/D.
     ANSELC = 0x00;      // Désactive les convertisseurs A/D.
@@ -190,7 +190,7 @@ void initialiseHardware() {
 void main() {
 
     // Initialise les interruptions et les périphériques:
-    initialiseHardware();
+    PERIPHERIQUES_initialise();
 
     // Initialise le servomoteur au point central:
     SERVO_place(0);
